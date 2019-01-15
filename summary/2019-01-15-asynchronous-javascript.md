@@ -25,7 +25,7 @@
 
 자바스크립트 코드를 해석하고 실행하는 인터프리터를 자바스크립트 엔진이라고 한다. 가장 널리 알려져있고 많이 사용되는 엔진 중 하나는 크롬 V8 엔진이다. V8 엔진은 크롬 브라우저, Node.js 등에서 사용되고 있으며, 크게 다음 두 부분으로 구성된다.
 
-* 메모리 힙(Memory Heap): 동적으로 생성된 객체 인스턴스가 이루어지는 영역이다.
+* 메모리 힙(Memory Heap): 동적으로 생성된 객체 인스턴스의 할당이 이루어지는 영역이다.
 * 호출 스택(Call Stack): 요청된 작업의 스택 프레임을 순차적으로 담아 관리하는 영역이다. 싱글 스레드 기반의 자바스크립트는 단 하나의 호출 스택을 사용하기 때문에 해당 태스크가 종료되기 전까지는 다른 어떤 태스크도 수행될 수 없다.
 
 ### 태스크 큐(또는 이벤트 큐)
@@ -47,8 +47,8 @@
 ```javascript
 // 인자로 주어진 시간만큼 코드의 실행을 미루는 함수
 function sleep(ms) {
-  const start = Date.now();
-  while ((Date.now() - start) < ms);
+  const start = Date.now()
+  while ((Date.now() - start) < ms) {}
   console.log('Sleeping..')
 }
 
@@ -64,21 +64,37 @@ sayHello('Kim')
 
 ![동기식 처리 모델에서의 호출 스택](./assets/2019-01-15-asynchronous-javascript-2.png)
 
-1. 코드가 실행되는 순간, 호출 스택의 최상단에 전역 실행 컨텍스트(Global execution context)가 쌓인다.
-2. `sayHello`가 그 위에 쌓인다.
-
 ### 비동기식 처리 모델 예시
 
-브라우저에 위임한다.
+앞서 본 예시처럼, 자바스크립트 엔진은 요청된 작업을 순차적으로 호출 스택에 쌓아올려 한 번에 하나의 작업씩만 수행할 뿐이다. 
 
-위임된 일이 끝나면, 그 결과와 콜백을 작업 큐(task queue)에 추가합니다.
-브라우저는 호출 스택이 비워질 때마다 작업 큐에서 가장 오래된 작업을 꺼내와서 해당 작업에 대한 콜백을 실행시킵니다. 브라우저는 이 과정을 끊임없이 반복하는데, 이를 이벤트 루프(event loop)라고 부릅니다.
+web API 중 하나인 `setTimeout`은 비동기식 처리 모델로 동작하는 대표적인 함수이다.
+
+```javascript
+function sayHello(name) {
+  setTimeout(() => console.log('Sleeping..'), 0)
+  console.log(`Hello, ${name}!`)
+}
+
+sayHello('Kim')
+```
+
+위 코드의 실행 과정을 순서대로 살펴보자.
+
+1. 코드를 실행하는 순간, 전역 실행 컨텍스트(Global Execution Context)가 호출 스택의 최상단에 쌓인다.
+2. `sayHello('Kim')`가 전역 실행 컨텍스트 위에 쌓인다.
+3. `setTimeout(/* ... */)`이 `sayHello('Kim')` 위에 쌓인다.
+4. `setTimeout(/* ... */)`에서 지정된 시간만큼 기다려야 하는 일에 대한 처리를 web APIs를 통해 브라우저에 위임하고 다음 작업을 진행한다. 지정된 시간이 지나면, 첫 번째 인자로 전달된 콜백 함수는 태스크 큐로 이동 후 호출 스택이 모두 비워질 때까지 대기할 것이다.
+5. `setTimeout(/* ... */)`이 호출 스택에서 제거된다.
+6. `console.log(/* ... */)`이 `sayHello('Kim')` 위에 쌓인다.
+7. `console.log(/* ... */)`이 호출 스택에서 제거된다.
+8. `sayHello('Kim')`이 호출 스택에서 제거된다.
+9. 전역 실행 컨텍스트가 호출 스택에서 제거된다.
+10. 이벤트 루프를 돌며 호출 스택이 비워진 것이 확인되면, 태스크 큐 내에 존재하는 태스크를 호출 스택으로 이동시켜 순차적으로 처리한다.
 
 ## 비동기 프로그래밍 기법
 
-비동기 작업 간에 순서를 보장
-
-여러가지 기법이 발전했다.
+비동기 작업 간에 순서를 보장. 여러 가지 기법이 발전.
 
 ### 콜백 패턴(Callback)
 
@@ -96,5 +112,5 @@ sayHello('Kim')
 
 * [프로미스 - Poiemaweb](https://poiemaweb.com/es6-promise)
 * [이벤트 - Poiemaweb](https://poiemaweb.com/js-event)
-* https://engineering.huiseoul.com/%EC%9E%90%EB%B0%94%EC%8A%A4%ED%81%AC%EB%A6%BD%ED%8A%B8%EB%8A%94-%EC%96%B4%EB%96%BB%EA%B2%8C-%EC%9E%91%EB%8F%99%ED%95%98%EB%8A%94%EA%B0%80-%EC%9D%B4%EB%B2%A4%ED%8A%B8-%EB%A3%A8%ED%94%84%EC%99%80-%EB%B9%84%EB%8F%99%EA%B8%B0-%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%EC%9D%98-%EB%B6%80%EC%83%81-async-await%EC%9D%84-%EC%9D%B4%EC%9A%A9%ED%95%9C-%EC%BD%94%EB%94%A9-%ED%8C%81-%EB%8B%A4%EC%84%AF-%EA%B0%80%EC%A7%80-df65ffb4e7e
-* https://helloworldjavascript.net/pages/285-async.html
+* [How JavaScript works: an overview of the engine, the runtime, and the call stack - Alexander Zlatkov](https://blog.sessionstack.com/how-does-javascript-actually-work-part-1-b0bacc073cf)
+* [How JavaScript works: Event loop and the rise of Async programming + 5 ways to better coding with async/await - Alexander Zlatkov](https://blog.sessionstack.com/how-javascript-works-event-loop-and-the-rise-of-async-programming-5-ways-to-better-coding-with-2f077c4438b5)

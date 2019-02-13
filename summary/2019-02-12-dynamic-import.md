@@ -1,3 +1,8 @@
+---
+title: 2019-02-12-dynamic-import
+author: chayeoi
+---
+
 # Dynamic import
 
 ## 동기(Motivation)
